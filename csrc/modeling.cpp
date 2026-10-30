@@ -25,7 +25,7 @@ std::vector<float> GraniteModel::forward(const std::vector<int>& tokens, size_t 
     }
 
     Tensor x = ops::token_embed(weights_.wte, tokens);
-    for (float& value : x.data()) value *= weights_.config.embedding_multiplier;
+    ops::scale(x, weights_.config.embedding_multiplier);
     for (size_t layer_idx = 0; layer_idx < weights_.config.num_hidden_layers; ++layer_idx) {
         transformer_layer(layer_idx, x, n_past);
     }
@@ -107,11 +107,7 @@ void GraniteModel::attention_layer(size_t layer_id, Tensor& x, size_t n_past) {
     }
 
     Tensor projected = ops::matmul_2d(attn_out, layer.o_proj_w);
-    for (size_t i = 0; i < x.dim(0); ++i) {
-        for (size_t j = 0; j < x.dim(1); ++j) {
-            x.at(i, j) += projected.at(i, j) * weights_.config.residual_multiplier;
-        }
-    }
+    ops::scale(x, projected, weights_.config.residual_multiplier);
 }
 
 void GraniteModel::moe_layer(size_t layer_id, Tensor& x) {

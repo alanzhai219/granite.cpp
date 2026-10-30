@@ -23,6 +23,21 @@ Tensor token_embed(const Tensor& wte, const std::vector<int>& ids) {
     return out;
 }
 
+void scale(Tensor& input, float factor) {
+    for (float& value : input.data()) {
+        value *= factor;
+    }
+}
+
+void scale(Tensor& dst, const Tensor& src, float factor) {
+    if (dst.shape() != src.shape()) {
+        throw std::invalid_argument("scale: tensor shapes must match");
+    }
+    for (size_t i = 0; i < dst.numel(); ++i) {
+        dst.ptr()[i] += src.ptr()[i] * factor;
+    }
+}
+
 Tensor matmul_2d(const Tensor& lhs, const Tensor& rhs) {
     if (lhs.ndims() != 2 || rhs.ndims() != 2 || lhs.dim(1) != rhs.dim(1)) {
         throw std::invalid_argument("matmul_2d: incompatible shape");
